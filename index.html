@@ -5,98 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ders Başarı Durumu Hesaplama</title>
     <style>
+        /* Basit stil ayarları */
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 20px;
             background-color: #f0f4f8;
         }
-        h1 {
-            text-align: center;
-            color: #4A4A4A;
-            margin-bottom: 20px;
-        }
         .container {
             max-width: 600px;
             margin: 0 auto;
-            background: white;
             padding: 30px;
+            background: white;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e0e0e0;
         }
-        label {
+        h1 {
+            text-align: center;
+            color: #4A4A4A;
+        }
+        label, button {
             display: block;
-            margin: 15px 0 5px;
-            font-weight: bold;
-            color: #333;
-            text-align: center; /* Etiket metnini ortala */
+            margin: 15px 0;
         }
-        #dersSayisi {
-            width: 100%; /* Genişliği %100 yap */
-            max-width: 300px; /* Maksimum genişliği ayarla */
-            margin: 0 auto; /* Ortalamak için */
-            display: block; /* Block yaparak ortalama sağla */
-        }
-        .not-inputs {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-        input[type="number"] {
-            width: calc(50% - 12px);
+        input[type="number"], input[type="text"] {
+            width: calc(100% - 20px);
             padding: 10px;
-            margin: 0 5px;
+            margin: 5px 0;
             border: 1px solid #ccc;
             border-radius: 8px;
-            box-sizing: border-box;
-            transition: border 0.3s;
-        }
-        input[type="number"]:focus {
-            border-color: #5cb85c;
-            outline: none;
-            box-shadow: 0 0 5px rgba(92, 184, 92, 0.5);
+            box-sizing: border-box; /* Padding ve border dahil olacak şekilde ayarlandı */
         }
         button {
             background-color: #5cb85c;
             color: white;
             border: none;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             cursor: pointer;
-            width: 100%;
-            font-size: 18px;
-            transition: background 0.3s, transform 0.3s;
-            margin-top: 15px;
+            width: 100%; /* Butonu tam genişlikte yap */
         }
         button:hover {
             background-color: #4cae4c;
-            transform: translateY(-2px);
         }
         .result {
             margin-top: 20px;
-            padding: 15px;
+            padding: 10px;
             background-color: #e9ecef;
             border-radius: 8px;
-            border: 1px solid #ccc;
-        }
-        .result p {
-            margin: 5px 0;
-            font-size: 16px;
-            color: #333;
-        }
-        .result p strong {
-            color: #5cb85c;
         }
 
+        /* Responsive ayarları */
         @media (max-width: 600px) {
-            .not-inputs {
-                flex-direction: column;
+            .container {
+                padding: 20px; /* Küçük ekranlarda padding azaltıldı */
             }
-            input[type="number"] {
-                width: 100%;
-                margin: 0 0 10px 0;
+            input[type="number"], input[type="text"], button {
+                padding: 8px; /* Küçük ekranlarda padding azaltıldı */
             }
         }
     </style>
@@ -109,7 +74,6 @@
         <button onclick="dersSayisiniGir()">Ders Sayısını Gir</button>
 
         <div id="dersFormu"></div>
-
         <button id="hesaplaBtn" style="display:none;" onclick="notlariHesapla()">Notları Hesapla</button>
 
         <div id="sonuc" class="result"></div>
@@ -138,10 +102,9 @@
                 dersFormu.innerHTML += `
                     <div>
                         <label>${i + 1}. Ders Notları:</label>
-                        <div class="not-inputs">
-                            <input type="number" id="vize${i}" min="0" placeholder="Vize Notu" required>
-                            <input type="number" id="final${i}" min="0" placeholder="Final Notu" required>
-                        </div>
+                        <input type="number" id="vize${i}" placeholder="Vize Notu" required>
+                        <input type="number" id="final${i}" placeholder="Final Notu" required>
+                        <input type="text" id="harf${i}" placeholder="Harf Notu" readonly>
                     </div>
                 `;
             }
@@ -152,62 +115,77 @@
         function notlariHesapla() {
             const dersSayisi = parseInt(document.getElementById('dersSayisi').value);
             let toplamKatsayi = 0;
+            let toplamKredi = 0; // Toplam kredi değişkeni
             let notlar = [];
+            let dcNotlar = [];
+            let ddNotlar = [];
+            let basarisizDersler = [];
 
             for (let i = 0; i < dersSayisi; i++) {
                 const vize = parseFloat(document.getElementById(`vize${i}`).value);
                 const final = parseFloat(document.getElementById(`final${i}`).value);
-
-                // Ağırlıklı puanı hesapla
-                const puan = (vize * 0.3) + (final * 0.7);
+                
+                // Genel notu hesapla: Vize %30, Final %70
+                const genelNot = (vize * 0.3) + (final * 0.7);
                 let harfNotu = '';
 
-                // Harf notuna dönüştür
-                if (puan >= 90) {
-                    harfNotu = "AA";
-                } else if (puan >= 80) {
-                    harfNotu = "BA";
-                } else if (puan >= 75) {
-                    harfNotu = "BB";
-                } else if (puan >= 70) {
-                    harfNotu = "CB";
-                } else if (puan >= 65) {
-                    harfNotu = "CC";
-                } else if (puan >= 60) {
-                    harfNotu = "DC";
-                } else if (puan >= 55) {
-                    harfNotu = "DD";
-                } else if (puan >= 50) {
-                    harfNotu = "DF";
-                } else {
-                    harfNotu = "FF";
-                }
+                // Harf notunu belirle
+                if (genelNot >= 90) harfNotu = 'AA';
+                else if (genelNot >= 80) harfNotu = 'BA';
+                else if (genelNot >= 75) harfNotu = 'BB';
+                else if (genelNot >= 70) harfNotu = 'CB';
+                else if (genelNot >= 65) harfNotu = 'CC';
+                else if (genelNot >= 60) harfNotu = 'DC';
+                else if (genelNot >= 55) harfNotu = 'DD';
+                else if (genelNot >= 50) harfNotu = 'DF';
+                else harfNotu = 'FF';
 
-                notlar.push(harfNotu);
-                toplamKatsayi += harfNotlari[harfNotu];
+                // Harf notunu ilgili alana yaz
+                document.getElementById(`harf${i}`).value = harfNotu;
+
+                // Harf notunun katsayısını kontrol et
+                if (harfNotlari[harfNotu] !== undefined) {
+                    const kredi = 1; // Varsayılan kredi
+                    toplamKatsayi += harfNotlari[harfNotu] * kredi; // Kredi ile çarp
+                    toplamKredi += kredi; // Toplam krediyi artır
+
+                    // Başarı durumu kontrolü
+                    if (harfNotu === "DF" || harfNotu === "FF" || harfNotu === "FG") {
+                        basarisizDersler.push(harfNotu);
+                    } else if (harfNotu === "DC") {
+                        dcNotlar.push({ vize, final, harfNotu });
+                    } else if (harfNotu === "DD") {
+                        ddNotlar.push({ vize, final, harfNotu });
+                    }
+                }
             }
 
-            // Ağırlıklı not ortalamasını hesapla
-            const ortalama = toplamKatsayi / dersSayisi;
+            // YANO hesaplama
+            let yano = toplamKatsayi / toplamKredi;
 
-            // Başarı durumu kontrolü
-            const sartliBasariliDersler = [];
-            const basarisizDersler = [];
+            // DC ve DD notlarının başarı durumunu kontrol et
+            let sartliBasarili = true;
 
-            for (const harfNotu of notlar) {
-                if ((harfNotu === "DC" || harfNotu === "DD") && ortalama < 2.00) {
-                    basarisizDersler.push(harfNotu);
-                } else {
-                    sartliBasariliDersler.push(harfNotu);
+            for (const not of dcNotlar) {
+                const puan = (not.vize * 0.3) + (not.final * 0.7);
+                if (puan < 65) { // Eğer geçmiyorsa
+                    sartliBasarili = false;
+                }
+            }
+
+            for (const not of ddNotlar) {
+                const puan = (not.vize * 0.3) + (not.final * 0.7);
+                if (puan < 65) { // Eğer geçmiyorsa
+                    sartliBasarili = false;
                 }
             }
 
             // Sonuçları göster
             const sonucDiv = document.getElementById('sonuc');
             sonucDiv.innerHTML = `
-                <p>Ağırlıklı not ortalaması: <strong>${ortalama.toFixed(2)}</strong></p>
-                <p>Şartlı Başarılı Dersler: <strong>${sartliBasariliDersler.join(', ') || 'Yok'}</strong></p>
+                <p>Ağırlıklı Not Ortalaması: <strong>${yano.toFixed(2)}</strong></p>
                 <p>Başarısız Dersler: <strong>${basarisizDersler.join(', ') || 'Yok'}</strong></p>
+                <p>Şartlı Başarılı Dersler: <strong>${sartliBasarili ? 'Var' : 'Yok'}</strong></p>
             `;
         }
     </script>
